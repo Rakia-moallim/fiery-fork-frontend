@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
@@ -13,6 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MenuCard } from "@/components/MenuCard";
+import { ReceiptModal } from "@/components/ReceiptModal";
 import { ShoppingCart, Clock, CheckCircle, Heart } from "lucide-react";
 
 // Mock order data
@@ -40,11 +40,24 @@ const mockOrder = {
   estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000),
 };
 
+// Receipt data for the modal
+const receiptData = {
+  orderId: mockOrder.orderId,
+  items: mockOrder.items,
+  subtotal: 41.97,
+  tax: 2.99,
+  deliveryFee: 0.00,
+  total: mockOrder.total,
+  date: new Date().toLocaleDateString(),
+  paymentMethod: "Credit Card ****1234",
+};
+
 export const CustomerDashboard = () => {
   const { user } = useAuth();
   const { favoriteItems } = useFavorites();
   const [orderStatus, setOrderStatus] = useState(mockOrder.status);
   const [deliveryProgress, setDeliveryProgress] = useState(0);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   // Simulate order progress
   useEffect(() => {
@@ -230,8 +243,13 @@ export const CustomerDashboard = () => {
                 </table>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button variant="outline">View Receipt</Button>
+            <CardFooter className="flex justify-end space-x-2">
+              <Button 
+                variant="outline"
+                onClick={() => setIsReceiptModalOpen(true)}
+              >
+                View Receipt
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -278,6 +296,12 @@ export const CustomerDashboard = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <ReceiptModal
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
+        orderData={receiptData}
+      />
     </div>
   );
 };

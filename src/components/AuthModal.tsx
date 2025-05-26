@@ -11,7 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface AuthModalProps {
@@ -32,6 +39,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
+  const [registerRole, setRegisterRole] = useState<UserRole>("customer");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +72,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     }
 
     try {
-      await register(registerName, registerEmail, registerPassword);
+      await register(registerName, registerEmail, registerPassword, registerRole);
       onClose();
       resetForms();
     } catch (error) {
@@ -79,6 +87,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setRegisterEmail("");
     setRegisterPassword("");
     setRegisterConfirmPassword("");
+    setRegisterRole("customer");
   };
 
   const handleClose = () => {
@@ -190,6 +199,19 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   onChange={(e) => setRegisterEmail(e.target.value)}
                   disabled={isLoading}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="register-role">Account Type</Label>
+                <Select value={registerRole} onValueChange={(value: UserRole) => setRegisterRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="register-password">Password</Label>

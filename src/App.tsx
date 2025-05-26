@@ -13,6 +13,7 @@ import { PrivateRoute } from "@/components/PrivateRoute";
 import HomePage from "@/pages/HomePage";
 import CartPage from "@/pages/CartPage";
 import DashboardPage from "@/pages/DashboardPage";
+import ReservationsPage from "@/pages/ReservationsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
                       </PrivateRoute>
                     }
                   />
+                  <Route path="/reservations" element={<ReservationsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
