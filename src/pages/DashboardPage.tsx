@@ -1,62 +1,45 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { CustomerDashboard } from "@/components/dashboard/CustomerDashboard";
-import { StaffDashboard } from "@/components/dashboard/StaffDashboard";
-import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
 import { useState } from "react";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
+import { AdminDashboardContent } from "@/components/dashboard/AdminDashboardContent";
 
 const DashboardPage = () => {
   const { isAuthenticated, user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect to home if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !isAuthModalOpen) {
       setIsAuthModalOpen(true);
     }
   }, [isAuthenticated, isAuthModalOpen, navigate]);
 
-  // Render appropriate dashboard based on user role
-  const renderDashboard = () => {
-    if (!user) return null;
-
-    switch (user.role) {
-      case "admin":
-        return <AdminDashboard />;
-      case "staff":
-        return <StaffDashboard />;
-      case "customer":
-        return <CustomerDashboard />;
-      default:
-        return <div>Invalid role</div>;
-    }
-  };
+  if (!isAuthenticated) {
+    return (
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <ThemeToggle />
-
-      <main className="flex-grow pt-24 pb-12">
-        <div className="container-custom">
-          {isAuthenticated ? renderDashboard() : null}
-        </div>
-      </main>
-
-      <Footer />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
+        <AdminSidebar />
+        <AdminDashboardContent />
+      </div>
       
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
-    </div>
+    </SidebarProvider>
   );
 };
 
