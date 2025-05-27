@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type ViewType = 
@@ -20,7 +19,9 @@ type ViewType =
   | 'payments'
   | 'bank'
   | 'orders'
-  | 'reservations';
+  | 'reservations'
+  | 'settings'
+  | 'help';
 
 interface DashboardContextType {
   activeView: ViewType;
