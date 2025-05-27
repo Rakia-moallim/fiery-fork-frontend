@@ -7,6 +7,7 @@ import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { AdminDashboardContent } from "@/components/dashboard/AdminDashboardContent";
+import { DashboardProvider } from "@/contexts/DashboardContext";
 
 const DashboardPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -29,17 +30,19 @@ const DashboardPage = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
-        <AdminSidebar />
-        <AdminDashboardContent />
-      </div>
-      
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-    </SidebarProvider>
+    <DashboardProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
+          <AdminSidebar />
+          <AdminDashboardContent />
+        </div>
+        
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+      </SidebarProvider>
+    </DashboardProvider>
   );
 };
 

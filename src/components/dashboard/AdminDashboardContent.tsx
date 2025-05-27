@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -10,8 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AdminDashboard } from "./AdminDashboard";
-import { StaffDashboard } from "./StaffDashboard";
+import { DashboardContent } from "./DashboardContent";
 
 export function AdminDashboardContent() {
   return (
@@ -36,7 +34,7 @@ export function AdminDashboardContent() {
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <AdminDashboard />
+        <DashboardContent />
       </div>
     </SidebarInset>
   );

@@ -44,23 +44,24 @@ import {
   Baby,
   Package,
 } from "lucide-react";
+import { useDashboard } from "@/contexts/DashboardContext";
 
 const menuItems = [
   {
     title: "Dashboard",
     icon: BarChart3,
-    url: "#dashboard",
+    value: "dashboard" as const,
     isActive: true,
   },
   {
     title: "Orders",
     icon: ShoppingCart,
-    url: "#orders",
+    value: "orders" as const,
   },
   {
     title: "Reservations",
     icon: CalendarDays,
-    url: "#reservations",
+    value: "reservations" as const,
   },
 ];
 
@@ -69,46 +70,46 @@ const dropdownMenus = [
     title: "Roles",
     icon: UserCheck,
     items: [
-      { title: "Roles Table", url: "#roles", icon: Table },
+      { title: "Roles Table", value: "roles" as const, icon: Table },
     ],
   },
   {
     title: "Staff Management",
     icon: Users,
     items: [
-      { title: "Staff Table", url: "#staff", icon: Users },
-      { title: "Add Staff", url: "#add-staff", icon: UserPlus },
-      { title: "Reservations Team", url: "#reservations-team", icon: Calendar },
-      { title: "Add Reservations Team", url: "#add-reservations-team", icon: UserPlus },
-      { title: "Delivery Team", url: "#delivery-team", icon: Truck },
-      { title: "Add Delivery Teams", url: "#add-delivery-teams", icon: UserPlus },
+      { title: "Staff Table", value: "staff" as const, icon: Users },
+      { title: "Add Staff", value: "add-staff" as const, icon: UserPlus },
+      { title: "Reservations Team", value: "reservations-team" as const, icon: Calendar },
+      { title: "Add Reservations Team", value: "add-reservations-team" as const, icon: UserPlus },
+      { title: "Delivery Team", value: "delivery-team" as const, icon: Truck },
+      { title: "Add Delivery Teams", value: "add-delivery-teams" as const, icon: UserPlus },
     ],
   },
   {
     title: "Table Management",
     icon: Table,
     items: [
-      { title: "Tables Table", url: "#tables", icon: Table },
-      { title: "Add Tables", url: "#add-tables", icon: UserPlus },
-      { title: "View Table", url: "#view-table", icon: Eye },
+      { title: "Tables Table", value: "tables" as const, icon: Table },
+      { title: "Add Tables", value: "add-tables" as const, icon: UserPlus },
+      { title: "View Table", value: "view-table" as const, icon: Eye },
     ],
   },
   {
     title: "Menu Management",
     icon: UtensilsCrossed,
     items: [
-      { title: "Menu View List", url: "#menu-view", icon: Eye },
-      { title: "Menu Management", url: "#menu-management", icon: UtensilsCrossed },
-      { title: "Kids Menu", url: "#kids-menu", icon: Baby },
-      { title: "Combo Menu", url: "#combo-menu", icon: Package },
+      { title: "Menu View List", value: "menu-view" as const, icon: Eye },
+      { title: "Menu Management", value: "menu-management" as const, icon: UtensilsCrossed },
+      { title: "Kids Menu", value: "kids-menu" as const, icon: Baby },
+      { title: "Combo Menu", value: "combo-menu" as const, icon: Package },
     ],
   },
   {
     title: "Transaction",
     icon: CreditCard,
     items: [
-      { title: "Payments", url: "#payments", icon: CreditCard },
-      { title: "Bank", url: "#bank", icon: Building },
+      { title: "Payments", value: "payments" as const, icon: CreditCard },
+      { title: "Bank", value: "bank" as const, icon: Building },
     ],
   },
 ];
@@ -117,17 +118,17 @@ const bottomMenuItems = [
   {
     title: "Settings",
     icon: Settings,
-    url: "#settings",
+    value: "settings" as const,
   },
   {
     title: "Help",
     icon: HelpCircle,
-    url: "#help",
+    value: "help" as const,
   },
 ];
 
 export function AdminSidebar() {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  const { activeView, setActiveView } = useDashboard();
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
 
   const toggleDropdown = (title: string) => {
@@ -160,9 +161,9 @@ export function AdminSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    onClick={() => setActiveItem(item.title)}
+                    onClick={() => setActiveView(item.value)}
                     className={`w-full justify-start px-4 py-3 rounded-lg transition-all duration-200 ${
-                      activeItem === item.title
+                      activeView === item.value
                         ? "bg-gradient-to-r from-restaurant-orange to-restaurant-red text-white shadow-lg"
                         : "text-slate-400 hover:text-white hover:bg-slate-800"
                     }`}
@@ -198,9 +199,9 @@ export function AdminSidebar() {
                         {menu.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
-                              onClick={() => setActiveItem(subItem.title)}
+                              onClick={() => setActiveView(subItem.value)}
                               className={`w-full justify-start px-4 py-2 ml-4 rounded-lg transition-all duration-200 ${
-                                activeItem === subItem.title
+                                activeView === subItem.value
                                   ? "bg-gradient-to-r from-restaurant-orange/20 to-restaurant-red/20 text-restaurant-orange border-l-2 border-restaurant-orange"
                                   : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
                               }`}
@@ -220,9 +221,9 @@ export function AdminSidebar() {
               {bottomMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    onClick={() => setActiveItem(item.title)}
+                    onClick={() => setActiveView(item.value)}
                     className={`w-full justify-start px-4 py-3 rounded-lg transition-all duration-200 ${
-                      activeItem === item.title
+                      activeView === item.value
                         ? "bg-gradient-to-r from-restaurant-orange to-restaurant-red text-white shadow-lg"
                         : "text-slate-400 hover:text-white hover:bg-slate-800"
                     }`}
