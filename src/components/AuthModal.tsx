@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Dialog,
@@ -39,7 +38,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  const [registerRole, setRegisterRole] = useState<UserRole>("customer");
+  const [registerRole, setRegisterRole] = useState<UserRole>("CUSTOMER");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +86,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setRegisterEmail("");
     setRegisterPassword("");
     setRegisterConfirmPassword("");
-    setRegisterRole("customer");
+    setRegisterRole("CUSTOMER");
   };
 
   const handleClose = () => {
@@ -207,9 +206,9 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     <SelectValue placeholder="Select account type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="CUSTOMER">Customer</SelectItem>
+                    <SelectItem value="STAFF">Staff</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

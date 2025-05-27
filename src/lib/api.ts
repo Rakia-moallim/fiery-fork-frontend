@@ -34,7 +34,16 @@ export const api = {
           // Try to parse as JSON for structured error messages
           try {
             const jsonError = JSON.parse(errorData);
-            errorMessage = jsonError.error || jsonError.message || errorMessage;
+            
+            // Handle validation errors with details
+            if (jsonError.details && typeof jsonError.details === 'object') {
+              const validationErrors = Object.entries(jsonError.details)
+                .map(([field, message]) => `${field}: ${message}`)
+                .join(', ');
+              errorMessage = `${jsonError.error || 'Validation failed'} - ${validationErrors}`;
+            } else {
+              errorMessage = jsonError.error || jsonError.message || errorMessage;
+            }
           } catch {
             // If not JSON, use the text as error message
             errorMessage = errorData || errorMessage;
