@@ -6,16 +6,23 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MenuCard } from "@/components/MenuCard";
 import { ReservationForm } from "@/components/ReservationForm";
 import { RatingForm } from "@/components/RatingForm";
-import { menuItems, comboItems, categories } from "@/data/menuData";
 import { Button } from "@/components/ui/button";
+import { useMenuItems, useMenuItemsByCategory, transformMenuItem, categories } from "@/hooks/useMenu";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HomePage = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   
-  // Filter menu items based on the active category
-  const filteredMenuItems = activeCategory === "all" 
-    ? menuItems 
-    : menuItems.filter(item => item.category === activeCategory);
+  // Fetch menu items from API
+  const { data: allMenuItems, isLoading: isLoadingAll } = useMenuItems();
+  const { data: categoryMenuItems, isLoading: isLoadingCategory } = useMenuItemsByCategory(activeCategory);
+  
+  // Determine which data to use and loading state
+  const isLoading = activeCategory === "all" ? isLoadingAll : isLoadingCategory;
+  const menuData = activeCategory === "all" ? allMenuItems : categoryMenuItems;
+  
+  // Transform backend data to frontend format
+  const filteredMenuItems = menuData ? menuData.map(transformMenuItem) : [];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -84,22 +91,36 @@ const HomePage = () => {
           
           {/* Menu Items Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredMenuItems.map(item => (
-              <MenuCard
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                description={item.description}
-                price={item.price}
-                image={item.image}
-                isPopular={item.isPopular}
-              />
-            ))}
+            {isLoading ? (
+              // Loading skeletons
+              Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="space-y-3">
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-6 w-1/4" />
+                </div>
+              ))
+            ) : (
+              filteredMenuItems.map(item => (
+                <MenuCard
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  image={item.image}
+                  isPopular={item.isPopular}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
       
-      {/* Combo Section */}
+      {/* Combo Section - Temporarily disabled until backend support is added */}
+      {/* 
       <section className="section-padding bg-muted">
         <div className="container-custom">
           <div className="text-center mb-12">
@@ -111,21 +132,11 @@ const HomePage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {comboItems.map(combo => (
-              <MenuCard
-                key={combo.id}
-                id={combo.id}
-                name={combo.name}
-                description={combo.description}
-                price={combo.price}
-                image={combo.image}
-                isPopular={combo.isPopular}
-                isCombo={true}
-              />
-            ))}
+            Coming soon - Special combo meals!
           </div>
         </div>
       </section>
+      */}
       
       {/* About Us Section */}
       <section id="about" className="section-padding bg-background">

@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -15,16 +15,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AuthModal } from "@/components/AuthModal";
-import { useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useCreateOrder } from "@/hooks/useOrders";
+import { OrderRequest } from "@/lib/api";
 
 const CartPage = () => {
   const { isAuthenticated, user } = useAuth();
   const { cartItems, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const navigate = useNavigate();
+  
+  // Use the create order mutation
+  const createOrderMutation = useCreateOrder();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -33,7 +36,7 @@ const CartPage = () => {
     }
   }, [isAuthenticated, isAuthModalOpen]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
@@ -44,15 +47,33 @@ const CartPage = () => {
       return;
     }
 
-    setIsCheckingOut(true);
+    try {
+      // Transform cart items to order items
+      const orderItems = cartItems.map(item => ({
+        menuItemId: parseInt(item.id),
+        quantity: item.quantity,
+        specialInstructions: item.specialInstructions || undefined,
+      }));
 
-    // Simulate checkout process
-    setTimeout(() => {
-      toast.success("Order placed successfully!");
+      // Create order request
+      const orderRequest: OrderRequest = {
+        orderItems,
+        orderType: 'DINE_IN', // Default to dine-in, could be made configurable
+        specialInstructions: undefined,
+        deliveryAddress: undefined,
+        phoneNumber: user?.phoneNumber || undefined,
+      };
+
+      // Place the order
+      await createOrderMutation.mutateAsync(orderRequest);
+      
+      // Clear cart and navigate to dashboard
       clearCart();
-      setIsCheckingOut(false);
       navigate("/dashboard");
-    }, 2000);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error('Checkout failed:', error);
+    }
   };
 
   return (
@@ -163,9 +184,9 @@ const CartPage = () => {
                     <Button
                       className="w-full bg-restaurant-orange hover:bg-restaurant-orange/90"
                       onClick={handleCheckout}
-                      disabled={isCheckingOut}
+                      disabled={createOrderMutation.isPending}
                     >
-                      {isCheckingOut ? (
+                      {createOrderMutation.isPending ? (
                         "Processing..."
                       ) : (
                         <>

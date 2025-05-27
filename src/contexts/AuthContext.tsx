@@ -1,15 +1,19 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { authService, UserDto } from '@/lib/api';
 
-// Define User Types and Roles
-export type UserRole = 'guest' | 'customer' | 'staff' | 'admin';
+// Define User Types and Roles (matching backend)
+export type UserRole = 'GUEST' | 'CUSTOMER' | 'STAFF' | 'ADMIN';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
+  phoneNumber?: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 // Define the Auth Context types
@@ -22,28 +26,6 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-// Mock users for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Customer User',
-    email: 'customer@example.com',
-    role: 'customer',
-  },
-  {
-    id: '2',
-    name: 'Staff Member',
-    email: 'staff@example.com',
-    role: 'staff',
-  },
-  {
-    id: '3',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-  },
-];
-
 // Create Auth Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -54,18 +36,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('restaurant_user');
-    
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('restaurant_user');
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem('restaurant_token');
+      
+      if (token) {
+        try {
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          localStorage.removeItem('restaurant_token');
+          localStorage.removeItem('restaurant_user');
+        }
       }
-    }
-    
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+
+    checkAuthStatus();
   }, []);
 
   // Login function
@@ -73,20 +61,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
-      // Simulate API request delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.login({ email, password });
       
-      // Find user with matching email
-      const foundUser = mockUsers.find(user => user.email === email);
+      // Store token and user data
+      localStorage.setItem('restaurant_token', response.token);
+      localStorage.setItem('restaurant_user', JSON.stringify(response.user));
+      setUser(response.user);
       
-      if (foundUser && password === 'password') {
-        // Set user in state and localStorage
-        setUser(foundUser);
-        localStorage.setItem('restaurant_user', JSON.stringify(foundUser));
-        toast.success(`Welcome back, ${foundUser.name}!`);
-      } else {
-        throw new Error('Invalid email or password');
-      }
+      toast.success(`Welcome back, ${response.user.name}!`);
     } catch (error: any) {
       toast.error(error.message || 'Login failed');
       throw error;
@@ -96,32 +78,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Register function
-  const register = async (name: string, email: string, password: string, role: UserRole = 'customer') => {
+  const register = async (name: string, email: string, password: string, role: UserRole = 'CUSTOMER') => {
     setIsLoading(true);
     
     try {
-      // Simulate API request delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.register({ 
+        name, 
+        email, 
+        password, 
+        role 
+      });
       
-      // Check if email already exists
-      if (mockUsers.some(user => user.email === email)) {
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user
-      const newUser: User = {
-        id: `${mockUsers.length + 1}`,
-        name,
-        email,
-        role,
-      };
-      
-      // Add user to mock database (in a real app this would be an API call)
-      mockUsers.push(newUser);
-      
-      // Set user in state and localStorage
-      setUser(newUser);
-      localStorage.setItem('restaurant_user', JSON.stringify(newUser));
+      // Store token and user data
+      localStorage.setItem('restaurant_token', response.token);
+      localStorage.setItem('restaurant_user', JSON.stringify(response.user));
+      setUser(response.user);
       
       toast.success('Registration successful!');
     } catch (error: any) {
@@ -135,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout function
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('restaurant_token');
     localStorage.removeItem('restaurant_user');
     toast.info('You have been logged out');
   };

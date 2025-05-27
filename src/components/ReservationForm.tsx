@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,11 +13,14 @@ import {
 } from "@/components/ui/select";
 import { AuthModal } from "./AuthModal";
 import { toast } from "sonner";
+import { useCreateReservation } from "@/hooks/useReservations";
 
 export const ReservationForm = () => {
   const { isAuthenticated, user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the create reservation mutation
+  const createReservationMutation = useCreateReservation();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -53,7 +55,7 @@ export const ReservationForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
@@ -70,11 +72,22 @@ export const ReservationForm = () => {
       return;
     }
 
-    setIsSubmitting(true);
+    try {
+      // Combine date and time into a single datetime string
+      const reservationDateTime = `${formData.date}T${formData.time}:00`;
+      
+      // Create reservation request
+      const reservationData = {
+        reservationDateTime,
+        numberOfGuests: parseInt(formData.guests),
+        specialRequests: formData.specialRequests || undefined,
+        phoneNumber: formData.phone,
+      };
 
-    // Simulate API request with timeout
-    setTimeout(() => {
-      toast.success("Reservation submitted successfully! We'll contact you to confirm.");
+      // Submit the reservation
+      await createReservationMutation.mutateAsync(reservationData);
+      
+      // Reset form on success
       setFormData({
         name: user?.name || "",
         email: user?.email || "",
@@ -84,8 +97,10 @@ export const ReservationForm = () => {
         guests: "2",
         specialRequests: "",
       });
-      setIsSubmitting(false);
-    }, 1500);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error('Reservation submission failed:', error);
+    }
   };
 
   return (
@@ -102,7 +117,7 @@ export const ReservationForm = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Your name"
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
             />
           </div>
 
@@ -117,7 +132,7 @@ export const ReservationForm = () => {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="your@email.com"
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
             />
           </div>
 
@@ -131,7 +146,7 @@ export const ReservationForm = () => {
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="Your phone number"
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
             />
           </div>
 
@@ -142,7 +157,7 @@ export const ReservationForm = () => {
             <Select
               value={formData.guests}
               onValueChange={(value) => handleSelectChange("guests", value)}
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
             >
               <SelectTrigger id="guests">
                 <SelectValue placeholder="Select number of guests" />
@@ -168,7 +183,7 @@ export const ReservationForm = () => {
               type="date"
               value={formData.date}
               onChange={handleInputChange}
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
               min={new Date().toISOString().split("T")[0]}
             />
           </div>
@@ -183,7 +198,7 @@ export const ReservationForm = () => {
               type="time"
               value={formData.time}
               onChange={handleInputChange}
-              disabled={isSubmitting}
+              disabled={createReservationMutation.isPending}
             />
           </div>
         </div>
@@ -199,16 +214,16 @@ export const ReservationForm = () => {
             onChange={handleInputChange}
             placeholder="Any special requests or dietary requirements?"
             className="min-h-[100px]"
-            disabled={isSubmitting}
+            disabled={createReservationMutation.isPending}
           />
         </div>
 
         <Button
           type="submit"
           className="w-full md:w-auto bg-restaurant-red hover:bg-restaurant-red/90"
-          disabled={isSubmitting}
+          disabled={createReservationMutation.isPending}
         >
-          {isSubmitting ? "Submitting..." : "Reserve a Table"}
+          {createReservationMutation.isPending ? "Submitting..." : "Reserve a Table"}
         </Button>
       </form>
 

@@ -10,6 +10,7 @@ export interface CartItem {
   quantity: number;
   image: string;
   isCombo?: boolean;
+  specialInstructions?: string;
 }
 
 interface CartContextType {
