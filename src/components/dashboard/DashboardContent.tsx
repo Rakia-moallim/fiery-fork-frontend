@@ -3,6 +3,13 @@ import { useDashboard } from "@/contexts/DashboardContext";
 import { AdminDashboard } from "./AdminDashboard";
 import { StaffDashboard } from "./StaffDashboard";
 import { RolesView } from "./views/RolesView";
+import { StaffView } from "./views/StaffView";
+import { TablesView } from "./views/TablesView";
+import { MenuView } from "./views/MenuView";
+import { OrdersView } from "./views/OrdersView";
+import { ReservationsView } from "./views/ReservationsView";
+import { PaymentsView } from "./views/PaymentsView";
+import { BankView } from "./views/BankView";
 
 export const DashboardContent = () => {
   const { activeView } = useDashboard();
@@ -14,9 +21,9 @@ export const DashboardContent = () => {
       case 'roles':
         return <RolesView />;
       case 'staff':
-        return <div className="p-6">Staff Table View - Coming Soon</div>;
+        return <StaffView />;
       case 'add-staff':
-        return <div className="p-6">Add Staff Form - Coming Soon</div>;
+        return <StaffView />;
       case 'reservations-team':
         return <div className="p-6">Reservations Team Table - Coming Soon</div>;
       case 'add-reservations-team':
@@ -26,27 +33,31 @@ export const DashboardContent = () => {
       case 'add-delivery-teams':
         return <div className="p-6">Add Delivery Teams Form - Coming Soon</div>;
       case 'tables':
-        return <div className="p-6">Tables Table - Coming Soon</div>;
+        return <TablesView />;
       case 'add-tables':
-        return <div className="p-6">Add Tables Form - Coming Soon</div>;
+        return <TablesView />;
       case 'view-table':
         return <div className="p-6">View Tables Grid - Coming Soon</div>;
       case 'menu-view':
-        return <div className="p-6">Menu View List - Coming Soon</div>;
+        return <MenuView />;
       case 'menu-management':
-        return <div className="p-6">Menu Management Table - Coming Soon</div>;
+        return <MenuView />;
       case 'kids-menu':
         return <div className="p-6">Kids Menu Table - Coming Soon</div>;
       case 'combo-menu':
         return <div className="p-6">Combo Menu Table - Coming Soon</div>;
       case 'payments':
-        return <div className="p-6">Payments Table - Coming Soon</div>;
+        return <PaymentsView />;
       case 'bank':
-        return <div className="p-6">Bank Info Table - Coming Soon</div>;
+        return <BankView />;
       case 'orders':
-        return <div className="p-6">Orders Table - Coming Soon</div>;
+        return <OrdersView />;
       case 'reservations':
-        return <div className="p-6">Reservations Table - Coming Soon</div>;
+        return <ReservationsView />;
+      case 'settings':
+        return <div className="p-6">Settings - Coming Soon</div>;
+      case 'help':
+        return <div className="p-6">Help & Support - Coming Soon</div>;
       default:
         return <AdminDashboard />;
     }
