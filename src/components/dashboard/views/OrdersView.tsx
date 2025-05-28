@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DataTable } from "../shared/DataTable";
 import { ConfirmationDialog } from "../shared/ConfirmationDialog";
@@ -9,44 +8,74 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye } from "lucide-react";
-import { useMockData, Order } from "@/hooks/useMockData";
+import { useAllOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
+import { Order } from "@/lib/api";
+import { toast } from "sonner";
 
 export const OrdersView = () => {
-  const { orders, setOrders } = useMockData();
+  const { data: orders = [], isLoading, error } = useAllOrders();
+  const updateOrderStatusMutation = useUpdateOrderStatus();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [formData, setFormData] = useState({ 
-    customer: '', 
-    items: '', 
-    total: '', 
-    status: 'pending' as 'pending' | 'preparing' | 'out-for-delivery' | 'delivered',
-    tableNumber: ''
-  });
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading orders...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center h-64 text-red-500">
+      Error loading orders: {error instanceof Error ? error.message : 'Unknown error'}
+    </div>;
+  }
 
   const getStatusVariant = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending': return 'outline';
+      case 'confirmed': return 'secondary';
       case 'preparing': return 'secondary';
-      case 'out-for-delivery': return 'default';
+      case 'ready': return 'default';
       case 'delivered': return 'default';
+      case 'cancelled': return 'destructive';
       default: return 'outline';
+    }
+  };
+
+  const handleStatusChange = async (orderId: number, newStatus: string) => {
+    try {
+      await updateOrderStatusMutation.mutateAsync({ orderId, status: newStatus });
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
     }
   };
 
   const columns = [
     { key: 'id', label: 'Order ID', sortable: true },
-    { key: 'customer', label: 'Customer', sortable: true },
     { 
-      key: 'items', 
-      label: 'Items', 
-      render: (items: string[]) => items.join(', ')
+      key: 'user', 
+      label: 'Customer', 
+      sortable: true,
+      render: (user: any) => user?.name || 'Unknown'
     },
     { 
-      key: 'total', 
+      key: 'orderItems', 
+      label: 'Items', 
+      render: (orderItems: any[]) => {
+        if (!orderItems || orderItems.length === 0) return 'No items';
+        return orderItems.map(item => 
+          `${item.quantity}x ${item.menuItem?.name || 'Unknown Item'}`
+        ).join(', ');
+      }
+    },
+    { 
+      key: 'totalAmount', 
       label: 'Total', 
       sortable: true,
-      render: (total: number) => `$${total.toFixed(2)}`
+      render: (total: number) => `$${total?.toFixed(2) || '0.00'}`
+    },
+    { 
+      key: 'orderType', 
+      label: 'Type', 
+      render: (type: string) => type?.replace('_', ' ') || 'DINE_IN'
     },
     { 
       key: 'status', 
@@ -54,98 +83,45 @@ export const OrdersView = () => {
       render: (status: string, row: Order) => (
         <Select 
           value={status} 
-          onValueChange={(value) => handleStatusChange(row.id, value as any)}
+          onValueChange={(value) => handleStatusChange(row.id, value)}
+          disabled={updateOrderStatusMutation.isPending}
         >
           <SelectTrigger className="w-auto">
             <Badge variant={getStatusVariant(status) as any}>
-              {status}
+              {status?.toLowerCase().replace('_', ' ') || 'pending'}
             </Badge>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="preparing">Preparing</SelectItem>
-            <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="PREPARING">Preparing</SelectItem>
+            <SelectItem value="READY">Ready</SelectItem>
+            <SelectItem value="DELIVERED">Delivered</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       )
     },
-    { key: 'orderDate', label: 'Order Date', sortable: true },
-    { key: 'tableNumber', label: 'Table #' },
+    { 
+      key: 'createdAt', 
+      label: 'Order Date', 
+      sortable: true,
+      render: (date: string) => new Date(date).toLocaleDateString()
+    },
+    { 
+      key: 'phoneNumber', 
+      label: 'Phone',
+      render: (phone: string) => phone || 'N/A'
+    },
   ];
 
   const actions = [
     { icon: Eye, label: 'View', onClick: (order: Order) => handleView(order), variant: 'ghost' as const },
-    { icon: Edit, label: 'Edit', onClick: (order: Order) => handleEdit(order), variant: 'ghost' as const },
-    { icon: Trash2, label: 'Delete', onClick: (order: Order) => handleDelete(order), variant: 'ghost' as const },
   ];
-
-  const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-  };
-
-  const handleAdd = () => {
-    setSelectedOrder(null);
-    setFormData({ customer: '', items: '', total: '', status: 'pending', tableNumber: '' });
-    setIsModalOpen(true);
-  };
 
   const handleView = (order: Order) => {
     setSelectedOrder(order);
-    setFormData({
-      customer: order.customer,
-      items: order.items.join(', '),
-      total: order.total.toString(),
-      status: order.status,
-      tableNumber: order.tableNumber?.toString() || ''
-    });
     setIsModalOpen(true);
-  };
-
-  const handleEdit = (order: Order) => {
-    setSelectedOrder(order);
-    setFormData({
-      customer: order.customer,
-      items: order.items.join(', '),
-      total: order.total.toString(),
-      status: order.status,
-      tableNumber: order.tableNumber?.toString() || ''
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = (order: Order) => {
-    setSelectedOrder(order);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleSave = () => {
-    const newOrder: Order = {
-      id: selectedOrder?.id || `ORD${Date.now()}`,
-      customer: formData.customer,
-      items: formData.items.split(',').map(item => item.trim()),
-      total: parseFloat(formData.total),
-      status: formData.status,
-      orderDate: selectedOrder?.orderDate || new Date().toISOString(),
-      tableNumber: formData.tableNumber ? parseInt(formData.tableNumber) : undefined,
-    };
-
-    if (selectedOrder) {
-      setOrders(orders.map(o => o.id === selectedOrder.id ? newOrder : o));
-    } else {
-      setOrders([...orders, newOrder]);
-    }
-
-    setIsModalOpen(false);
-  };
-
-  const confirmDelete = () => {
-    if (selectedOrder) {
-      setOrders(orders.filter(o => o.id !== selectedOrder.id));
-    }
-    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -156,92 +132,123 @@ export const OrdersView = () => {
         data={orders}
         columns={columns}
         actions={actions}
-        onAdd={handleAdd}
-        searchKey="customer"
+        searchKey="user.name"
       />
 
+      {/* Order Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {selectedOrder ? 'Edit Order' : 'Add New Order'}
-            </DialogTitle>
+            <DialogTitle>Order Details - #{selectedOrder?.id}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customer">Customer Name</Label>
-              <Input
-                id="customer"
-                value={formData.customer}
-                onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
-                placeholder="Enter customer name"
-              />
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Customer Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Customer</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.user?.name || 'Unknown'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Email</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.user?.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Phone</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.phoneNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Order Type</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.orderType?.replace('_', ' ') || 'DINE_IN'}</p>
+                </div>
+              </div>
+
+              {/* Delivery Address (if applicable) */}
+              {selectedOrder.deliveryAddress && (
+                <div>
+                  <Label className="text-sm font-medium">Delivery Address</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.deliveryAddress}</p>
+                </div>
+              )}
+
+              {/* Order Items */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Order Items</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium">Item</th>
+                        <th className="text-center p-3 text-sm font-medium">Qty</th>
+                        <th className="text-right p-3 text-sm font-medium">Unit Price</th>
+                        <th className="text-right p-3 text-sm font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.orderItems?.map((item, index) => (
+                        <tr key={index} className="border-t">
+                          <td className="p-3">
+                            <div>
+                              <p className="font-medium">{item.menuItem?.name || 'Unknown Item'}</p>
+                              {item.specialInstructions && (
+                                <p className="text-xs text-muted-foreground">Note: {item.specialInstructions}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">{item.quantity}</td>
+                          <td className="p-3 text-right">${item.unitPrice?.toFixed(2) || '0.00'}</td>
+                          <td className="p-3 text-right font-medium">${item.totalPrice?.toFixed(2) || '0.00'}</td>
+                        </tr>
+                      )) || (
+                        <tr>
+                          <td colSpan={4} className="p-3 text-center text-muted-foreground">No items found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot className="bg-muted">
+                      <tr>
+                        <td colSpan={3} className="p-3 text-right font-medium">Total Amount:</td>
+                        <td className="p-3 text-right font-bold">${selectedOrder.totalAmount?.toFixed(2) || '0.00'}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              {selectedOrder.specialInstructions && (
+                <div>
+                  <Label className="text-sm font-medium">Special Instructions</Label>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.specialInstructions}</p>
+                </div>
+              )}
+
+              {/* Order Timestamps */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Order Date</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selectedOrder.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                {selectedOrder.estimatedDeliveryTime && (
+                  <div>
+                    <Label className="text-sm font-medium">Estimated Delivery</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(selectedOrder.estimatedDeliveryTime).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <Label htmlFor="items">Items (comma-separated)</Label>
-              <Input
-                id="items"
-                value={formData.items}
-                onChange={(e) => setFormData({ ...formData, items: e.target.value })}
-                placeholder="Enter items"
-              />
-            </div>
-            <div>
-              <Label htmlFor="total">Total Amount</Label>
-              <Input
-                id="total"
-                type="number"
-                step="0.01"
-                value={formData.total}
-                onChange={(e) => setFormData({ ...formData, total: e.target.value })}
-                placeholder="Enter total amount"
-              />
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="preparing">Preparing</SelectItem>
-                  <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="tableNumber">Table Number (optional)</Label>
-              <Input
-                id="tableNumber"
-                type="number"
-                value={formData.tableNumber}
-                onChange={(e) => setFormData({ ...formData, tableNumber: e.target.value })}
-                placeholder="Enter table number"
-              />
-            </div>
-          </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              {selectedOrder ? 'Update' : 'Create'}
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ConfirmationDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="Delete Order"
-        description={`Are you sure you want to delete order "${selectedOrder?.id}"? This action cannot be undone.`}
-        onConfirm={confirmDelete}
-        confirmText="Delete"
-        variant="destructive"
-      />
     </>
   );
 };

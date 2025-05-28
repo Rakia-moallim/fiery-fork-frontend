@@ -232,6 +232,22 @@ export const orderService = {
     
   cancelOrder: (id: number) => 
     api.patch<void>(`/orders/${id}/cancel`),
+
+  // Admin/Staff endpoints
+  getAllOrders: () => 
+    api.get<Order[]>('/orders'),
+    
+  getOrdersByStatus: (status: string) => 
+    api.get<Order[]>(`/orders/status/${status}`),
+    
+  updateOrderStatus: (id: number, status: string) => 
+    api.patch<Order>(`/orders/${id}/status?status=${status}`),
+    
+  getTotalRevenue: (startDate: string, endDate: string) => 
+    api.get<number>(`/orders/analytics/revenue?startDate=${startDate}&endDate=${endDate}`),
+    
+  getOrderCountByStatus: (status: string) => 
+    api.get<number>(`/orders/analytics/count/${status}`),
 };
 
 export const reservationService = {
