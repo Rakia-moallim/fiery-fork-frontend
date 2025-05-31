@@ -52,6 +52,7 @@ import {
   AlertTriangle,
   Crown,
   Loader2,
+  UserX,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { customerService } from "@/utils/customerService";
@@ -81,6 +82,7 @@ export function AdminCustomersPage() {
   // State management
   const [customers, setCustomers] = useState<CustomerUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
@@ -108,70 +110,18 @@ export function AdminCustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const fetchedCustomers = await customerService.getCustomers();
       setCustomers(fetchedCustomers as CustomerUser[]);
     } catch (error) {
       console.error('Error fetching customers:', error);
+      setError('Failed to fetch customers from the server');
+      setCustomers([]); // Clear any existing data
       toast({
         title: "Error",
-        description: "Failed to fetch customers. Using mock data for demo.",
+        description: "Failed to fetch customers from the server",
         variant: "destructive",
       });
-      
-      // Fallback to mock data if API fails
-      setCustomers([
-        {
-          id: 1,
-          username: "john_doe",
-          email: "john.doe@email.com",
-          fullName: "John Doe",
-          role: "customer",
-          phone: "+1 (555) 123-4567",
-          address: "123 Main St, City, State 12345",
-          dateJoined: "2024-01-15",
-          lastLogin: "2024-05-20T10:30:00",
-          status: "active",
-          customerLevel: "premium",
-          totalOrders: 42,
-          totalSpent: 1250.75,
-          averageOrderValue: 29.78,
-          notes: "Frequent customer, prefers delivery"
-        },
-        {
-          id: 2,
-          username: "sarah_j",
-          email: "sarah.johnson@email.com",
-          fullName: "Sarah Johnson",
-          role: "customer",
-          phone: "+1 (555) 987-6543",
-          address: "456 Oak Ave, City, State 12345",
-          dateJoined: "2024-02-20",
-          lastLogin: "2024-05-19T15:45:00",
-          status: "active",
-          customerLevel: "vip",
-          totalOrders: 89,
-          totalSpent: 3420.50,
-          averageOrderValue: 38.43,
-          notes: "VIP customer, always tips well"
-        },
-        {
-          id: 3,
-          username: "mike_w",
-          email: "mike.wilson@email.com",
-          fullName: "Mike Wilson",
-          role: "customer",
-          phone: "+1 (555) 456-7890",
-          address: "789 Pine Rd, City, State 12345",
-          dateJoined: "2024-03-10",
-          lastLogin: "2024-05-18T20:15:00",
-          status: "inactive",
-          customerLevel: "regular",
-          totalOrders: 8,
-          totalSpent: 180.25,
-          averageOrderValue: 22.53,
-          notes: "New customer, hasn't ordered recently"
-        }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -395,6 +345,24 @@ export function AdminCustomersPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Failed to Load Customers</h3>
+            <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          </div>
+          <Button onClick={fetchCustomers}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 space-y-6 p-6 overflow-auto">
       {/* Header */}
@@ -531,122 +499,154 @@ export function AdminCustomersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Customer</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Contact</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Status</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Level</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Orders</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Total Spent</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Joined</th>
-                  <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{customer.fullName}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">@{customer.username}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-3 w-3 text-gray-500" />
-                          <span className="text-gray-900 dark:text-white">{customer.email}</span>
-                        </div>
-                        {customer.phone && (
-                          <div className="flex items-center gap-1 text-sm">
-                            <Phone className="h-3 w-3 text-gray-500" />
-                            <span className="text-gray-600 dark:text-gray-400">{customer.phone}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      {getStatusBadge(customer.status)}
-                    </td>
-                    <td className="p-4">
-                      {getLevelBadge(customer.customerLevel)}
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm">
-                        <p className="font-medium text-gray-900 dark:text-white">{customer.totalOrders}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          ${customer.averageOrderValue.toFixed(2)} avg
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        ${customer.totalSpent.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm">
-                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                          <Calendar className="h-3 w-3" />
-                          {customer.dateJoined}
-                        </div>
-                        {customer.lastLogin && (
-                          <p className="text-xs text-gray-500">
-                            Last: {new Date(customer.lastLogin).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setIsEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Orders
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Reset Password
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => handleDeleteCustomer(customer.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Account
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+          {customers.length === 0 ? (
+            // Empty state when no customers
+            <div className="text-center py-12">
+              <UserX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Customers Found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                There are no customers in the system yet. Create your first customer account to get started.
+              </p>
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add First Customer
+              </Button>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            // Empty state when search/filter returns no results
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Customers Match Your Search</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Try adjusting your search terms or filters to find customers.
+              </p>
+              <Button variant="outline" onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+                setLevelFilter("all");
+              }}>
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            // Table with customers
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Customer</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Contact</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Status</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Level</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Orders</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Total Spent</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Joined</th>
+                    <th className="text-left p-4 font-medium text-gray-900 dark:text-white">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">{customer.fullName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">@{customer.username}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Mail className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-900 dark:text-white">{customer.email}</span>
+                          </div>
+                          {customer.phone && (
+                            <div className="flex items-center gap-1 text-sm">
+                              <Phone className="h-3 w-3 text-gray-500" />
+                              <span className="text-gray-600 dark:text-gray-400">{customer.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {getStatusBadge(customer.status)}
+                      </td>
+                      <td className="p-4">
+                        {getLevelBadge(customer.customerLevel)}
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm">
+                          <p className="font-medium text-gray-900 dark:text-white">{customer.totalOrders}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            ${customer.averageOrderValue.toFixed(2)} avg
+                          </p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          ${customer.totalSpent.toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm">
+                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                            <Calendar className="h-3 w-3" />
+                            {customer.dateJoined}
+                          </div>
+                          {customer.lastLogin && (
+                            <p className="text-xs text-gray-500">
+                              Last: {new Date(customer.lastLogin).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Orders
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Reset Password
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteCustomer(customer.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Account
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
