@@ -1,13 +1,8 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
 import { useState } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
-import { AdminDashboardContent } from "@/components/dashboard/AdminDashboardContent";
-import { DashboardProvider } from "@/contexts/DashboardContext";
 
 const DashboardPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -20,6 +15,25 @@ const DashboardPage = () => {
     }
   }, [isAuthenticated, isAuthModalOpen, navigate]);
 
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Redirect to role-specific dashboard
+      switch (user.role) {
+        case 'ADMIN':
+          navigate('/dashboard/admin', { replace: true });
+          break;
+        case 'STAFF':
+          navigate('/dashboard/staff', { replace: true });
+          break;
+        case 'CUSTOMER':
+          navigate('/dashboard/customer', { replace: true });
+          break;
+        default:
+          navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
   if (!isAuthenticated) {
     return (
       <AuthModal
@@ -29,20 +43,11 @@ const DashboardPage = () => {
     );
   }
 
+  // Show loading while redirecting
   return (
-    <DashboardProvider>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
-          <AdminSidebar />
-          <AdminDashboardContent />
-        </div>
-        
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
-      </SidebarProvider>
-    </DashboardProvider>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+    </div>
   );
 };
 
